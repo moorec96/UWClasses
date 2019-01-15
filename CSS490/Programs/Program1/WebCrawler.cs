@@ -13,7 +13,7 @@ namespace WebCrawler
     class WebCrawler
     {
 
-        //private Dictionary<String, bool> visitedSites;
+        static private Dictionary<string, bool> visitedSites;
 //===================================================================================================
 	//
 //===================================================================================================
@@ -27,7 +27,8 @@ namespace WebCrawler
                 Environment.Exit(0);
             }
 
-            
+            visitedSites = new Dictionary<string,bool>();
+
             string hostname = args[0];
             int numHops = Int32.Parse(args[1]);
 			hostname = prepareHost(hostname);
@@ -49,7 +50,7 @@ namespace WebCrawler
 			int port = 80;
             if(host == null)
             {
-                Console.Write("Invalid Host");
+                Console.Write("Unable to find IP address with hostname");
 				Console.WriteLine("Press any key to exit");
                 Console.ReadKey();
                 Environment.Exit(0);
@@ -68,7 +69,7 @@ namespace WebCrawler
             }
             if(sock == null)
             {
-                Console.WriteLine("Unable to connect socket");
+                Console.WriteLine("Unable to connect socket to server");
                 Console.WriteLine("Press any key to exit");
                 Console.ReadKey();
                 Environment.Exit(0);
@@ -112,6 +113,7 @@ namespace WebCrawler
 		static string getHTML(string hostname, IPHostEntry host, int numHops){
 			
 			string resp = makeHTTPRequest(hostname,host);
+			Console.WriteLine(hostname);
 			if(numHops == 0){
 				return parseHTML(resp);
 			}
@@ -121,12 +123,14 @@ namespace WebCrawler
 			}
 			foreach(Match match in matches){
 				GroupCollection groups = match.Groups;
-				//Console.WriteLine(groups[1].ToString());
 				string hostN = prepareHost(groups[1].ToString());
-				//Console.WriteLine(hostN);
-				host = getIP(getHostName(hostN));
-				if(host != null){
-					return getHTML(hostN, host, numHops-1);
+				string temp = getHostName(hostN);
+				if(!visitedSites.ContainsKey(temp)){
+					visitedSites[temp] = true;
+					host = getIP(temp);
+					if(host != null){
+						return getHTML(hostN, host, numHops-1);
+					}
 				}
 			}
 			return parseHTML(resp);
@@ -191,10 +195,8 @@ namespace WebCrawler
 				host = Dns.GetHostEntry(hostname);
 			}
 			catch(SocketException e){
-				Console.WriteLine("Invalid Hostname");
-				Console.WriteLine("Press any key to exit");
-                Console.ReadKey();
-                Environment.Exit(0);
+				Console.WriteLine("Unable to find IP address with hostname");
+				return null;
 			}
 
 			return host;
