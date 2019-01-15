@@ -28,9 +28,6 @@ namespace WebCrawler
             
             string hostname = args[0];
             int numHops = Int32.Parse(args[1]);
-
-			
-			
 			string htmlPage = getHTML(hostname, numHops);
             
             //Hit any key to exit
@@ -109,50 +106,59 @@ namespace WebCrawler
 		}
 
 		static string getHTML(string hostname, int numHops){
-
-			string htmlPage = "";
-			for(int i = 0; i < numHops; i++){
-				hostname = prepareHost(hostname);
-				string path = getPath(hostname);
-				Tuple<Socket,IPHostEntry> hostInfo = getSock(hostname);
-				Socket sock = hostInfo.Item1;
-				string host = hostInfo.Item2.HostName;
-
-				string request = "GET " + path + " HTTP/1.1\r\nHost: " + host + 
-				"\r\nConnection: keep-alive\r\nAccept: text/html\r\n\r\n";
-            	byte[] dataToSend = Encoding.ASCII.GetBytes(request);
-            	sock.Send(dataToSend);
-
-            	byte[] buff = new byte[1024];
-
-            	int bytes = 0;
-            	string resp = "";
-
-            	do
-            	{
-                	bytes = sock.Receive(buff);
-                	resp = resp + Encoding.ASCII.GetString(buff, 0, bytes);
-					Thread.Sleep(5);
-            	} while (sock.Available > 0);
-            	//Console.WriteLine(resp);
-
-				MatchCollection matches = getLinks(resp);
-				if(matches.Count == 0){
-					break;
-				}
-				foreach(Match match in matches){
-					GroupCollection groups = match.Groups;
-					Console.WriteLine(groups[i]);
-				}
+			if(numHops == 0){
+				return parseHTML(hostname);
 			}
-			return htmlPage;
+
+			string resp = makeHTTPRequest(hostname);
+
+			MatchCollection matches = getLinks(resp);
+			if(matches.Count == 0){
+				return parseHTML(resp);
+			}
+			foreach(Match match in matches){
+				GroupCollection groups = match.Groups;
+				
+				Console.WriteLine(groups[0]);
+			}
+			return "";
 		}
 		
+		static string parseHTML(string hostname){
+			return parseHTML(makeHTTPRequest(hostname));
+		}
+
+		static string makeHTTPRequest(string hostname){
+			hostname = prepareHost(hostname);
+			string path = getPath(hostname);
+			Tuple<Socket,IPHostEntry> hostInfo = getSock(hostname);
+			Socket sock = hostInfo.Item1;
+			string host = hostInfo.Item2.HostName;
+
+			string request = "GET " + path + " HTTP/1.1\r\nHost: " + host + 
+				"\r\nConnection: keep-alive\r\nAccept: text/html\r\n\r\n";
+            byte[] dataToSend = Encoding.ASCII.GetBytes(request);
+            sock.Send(dataToSend);
+
+            byte[] buff = new byte[1024];
+
+            int bytes = 0;
+            string resp = "";
+
+            do
+            {
+               	bytes = sock.Receive(buff);
+               	resp = resp + Encoding.ASCII.GetString(buff, 0, bytes);
+				Thread.Sleep(5);
+            } while (sock.Available > 0);
+
+			return resp;
+		}
+
 		static MatchCollection getLinks(string resp){
 			//string regExp = "href=[\'"]?([^\'" >]+)";
-			Regex rx = new Regex("href\\s*=\\s*(?:\"(?<1>[^\"]*)\"|(?<1>\\S+))",RegexOptions.IgnoreCase);
+			Regex rx = new Regex("href=\"([^\"]*)",RegexOptions.IgnoreCase);
 			return rx.Matches(resp);
-		}
-		
+		}	
     }
 }
