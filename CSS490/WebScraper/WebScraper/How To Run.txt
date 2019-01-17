@@ -1,0 +1,11 @@
+Commands to Run:
+
+	To compile .cs file:
+		csc /r:System.Net.Http.dll WebScraper.cs
+				or
+		mcs /r:System.Net.Http.dll Webscraper.cs
+
+	To Run .exe file:
+		WebScraper.exe *url* *integer*
+				or
+		mono WebScraper *url* *integer*	
