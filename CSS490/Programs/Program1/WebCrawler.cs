@@ -85,10 +85,11 @@ namespace WebCrawler
 				host = host.Substring(host.IndexOf("://")+ 3);
 				//Console.WriteLine(host);
 			}
-
+			/* 
 			if(!host.Contains("www.") && !host.Contains("WWW.")){
 				host = "www." + host;
 			}
+			*/
 			//Console.WriteLine("Test After: " + host);
 			return host;
 		}
@@ -112,7 +113,8 @@ namespace WebCrawler
 //===================================================================================================
 		static string getHTML(string hostname, IPHostEntry host, int numHops){
 			
-			string resp = makeHTTPRequest(hostname,host);
+			string resp = makeHTTPRequest(hostname,hos
+			t);
 			Console.WriteLine(hostname);
 			if(numHops == 0){
 				return parseHTML(resp);
